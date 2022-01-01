@@ -76,7 +76,7 @@ def uci_loop() -> None:
             #if 'setoption name Threads value' in string:
             #    set_thread_count(int(tokens[-1]))
             # Clear hash
-            elif 'setoption name Clear Hash' in string:
+            if 'setoption name Clear Hash' in string:
                 tt = make_tt()
 
         if string == 'ucinewgame':

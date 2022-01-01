@@ -30,7 +30,6 @@ SEE_PRUNE_CUTOFF = 20
 SEE_PRUNE_CAPTURE_CUTOFF = 80
 
 LMP = zeros(2, MAX_PLY)
-LMR = zeros(MAX_PLY, 64)
 STATIC_PRUNE = zeros(2, MAX_PLY)
 
 # Ethereal's late move reduction table
@@ -318,6 +317,9 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             special_quiet = False
 
         if best_value > -MATE_BOUND:
+            # Late move pruning
+            if not is_root and move_count >= (3 + depth**2) // (2 - improving):
+                skip_quiets = True
             # Quiet history pruning
             if (depth < 9 
                 and not tactical

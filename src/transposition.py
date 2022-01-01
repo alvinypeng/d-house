@@ -20,7 +20,7 @@ OVERHEAD_SIZE = 4 * getsizeof(Array('q', 1))
 
 TTEntry = namedtuple('TTEntry', 'value depth bound move')
 
-def make_tt(size: int = HASH_SIZE) -> None:
+def make_tt(size: int=HASH_SIZE) -> None:
     '''Create transposition table and evaluation cache.'''
 
     size = max(min(MAX_HASH_SIZE, size), MIN_HASH_SIZE)

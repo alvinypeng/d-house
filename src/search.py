@@ -29,7 +29,7 @@ DELTA_CUTOFF = 150
 SEE_PRUNE_CUTOFF = 20
 SEE_PRUNE_CAPTURE_CUTOFF = 80
 
-LMR = zeros(2, MAX_PLY)
+LMR = zeros(MAX_PLY, 64)
 STATIC_PRUNE = zeros(2, MAX_PLY)
 
 # Ethereal's late move reduction table

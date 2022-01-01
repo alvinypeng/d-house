@@ -9,6 +9,9 @@ if you wish to create an executable.
 
 Currently only tested on Windows.
 
+# Performance
+Plays best in longer time formats (preferably with increment).
+
 # Influences
 [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)<br/>
 [Andy Grant - Ethereal](https://github.com/AndyGrant/Ethereal)<br/>

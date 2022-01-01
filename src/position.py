@@ -235,7 +235,7 @@ class Position:
             pass
         return 'TODO'
 
-def parse_fen(fen: str = STARTING_FEN) -> Position:
+def parse_fen(fen: str=STARTING_FEN) -> Position:
     '''Creates a position from a FEN.'''
     
     board = zeros(64)
@@ -396,7 +396,7 @@ def do_move(pos: Position, move: Move) -> Position:
 
     # Update accumulator for normal move
     else:
-        # Update black accumulation
+        # Update white accumulation
         f0 = FEATURE_INDEX[WHITE][dirty_pieces[0][0]][dirty_pieces[0][1]]
         f1 = FEATURE_INDEX[WHITE][dirty_pieces[1][0]][dirty_pieces[1][1]]
         accumulation = accumulator[WHITE]
@@ -404,7 +404,7 @@ def do_move(pos: Position, move: Move) -> Position:
                               + FEATURE_WEIGHTS[f0 + i]
                               - FEATURE_WEIGHTS[f1 + i]
                               for i in range(N_HIDDEN)]
-        # Update white accumulation
+        # Update black accumulation
         f0 = FEATURE_INDEX[BLACK][dirty_pieces[0][0]][dirty_pieces[0][1]]
         f1 = FEATURE_INDEX[BLACK][dirty_pieces[1][0]][dirty_pieces[1][1]]
         accumulation = accumulator[BLACK]
@@ -483,7 +483,7 @@ def do_move(pos: Position, move: Move) -> Position:
     return Position(board, bitboards, xside,
                     castling, ep_square, material_key, previous, accumulator)
 
-def see(pos: Position, move: Move, max = max):
+def see(pos: Position, move: Move, max=max):
     '''Static exchange evaluation.'''
 
     flag = move_flag(move)

@@ -59,7 +59,7 @@ def get_tactical_history(pos: Position, data: SearchData, move: Move) -> int:
 
     return data.th[move_piece(move) // 2 - 1][end][captured // 2 - 1][0]
 
-def update_stat(stat: list[int], bonus: int, abs = abs) -> None:
+def update_stat(stat: list[int], bonus: int, abs=abs) -> None:
     stat[0] += 64 * bonus - stat[0] * abs(bonus) // 1024
 
 def update_histories(pos: Position, data: SearchData, best: Move, depth: int,

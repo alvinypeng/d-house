@@ -15,7 +15,7 @@ PHASES = (
     PLAY_BAD_TACTICALS,
 ) = range(5)
 
-sort_scored = partial(sorted, key = lambda scored: scored[1], reverse = True)
+sort_scored = partial(sorted, key=lambda scored: scored[1], reverse=True)
 
 class MovePicker:
 

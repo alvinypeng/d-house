@@ -4,7 +4,7 @@ from defs import *
 from nnue import *
 from position import *
 
-@cache_evaluation(maxsize = 0xFFFF)
+@cache_evaluation(maxsize=0xFFFF)
 def evaluate(pos: Position) -> Value:
     '''Main evaluation function.'''
 

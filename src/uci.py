@@ -13,7 +13,7 @@ def print_options():
     print('id name D-House 0.6')
     print('id author Alvin Peng')
     print('option name Clear Hash type button')
-    #print('option name Threads type spin default 1 min 1 max 4')
+    print('option name Threads type spin default 1 min 1 max 4')
     print('uciok')
 
 def parse_go(pos: Position, string: str, tt: Array) -> None:
@@ -79,8 +79,8 @@ def uci_loop() -> None:
         if 'setoption name' in string:
             tokens = string.split()
             # Set thread count
-            #if 'setoption name Threads value' in string:
-            #    set_thread_count(int(tokens[-1]))
+            if 'setoption name Threads value' in string:
+                set_thread_count(int(tokens[-1]))
             # Clear hash
             if 'setoption name Clear Hash' in string:
                 tt = make_tt()

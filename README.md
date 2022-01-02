@@ -10,7 +10,7 @@ if you wish to create an executable.
 Currently only tested on Windows.
 
 # Performance
-Plays best in longer time control (e.g. 40/15 format)
+Plays better in longer time controls (e.g. 40/15 format)
 
 # Influences
 [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)<br/>

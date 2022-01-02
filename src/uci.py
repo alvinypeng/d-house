@@ -22,9 +22,15 @@ def parse_go(pos: Position, string: str, tt: Array) -> None:
     tokens = string.split()
     side = pos.side
     depth = MAX_PLY
+    moves_to_go = 25
     time_ms = 0
 
-    # Simple time management - take remaining time and divide by 25
+    # Moves to go
+    if 'movestogo' in string:
+        moves_to_go = int(tokens[tokens.index('movestogo') + 1])
+    
+    # Simple time management - take remaining time and divide by 
+    # moves_to_go
     if side == WHITE:
         # White time remaining
         if 'wtime' in tokens:
@@ -39,7 +45,7 @@ def parse_go(pos: Position, string: str, tt: Array) -> None:
         # Black increment
         if 'binc' in tokens:
             time_ms += int(tokens[tokens.index('binc') + 1])  
-    time_ms = time_ms / 25
+    time_ms = time_ms / moves_to_go
 
     # Search for a specified amound of time
     if 'movetime' in tokens:

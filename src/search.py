@@ -318,8 +318,8 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
 
         if best_value > -MATE_BOUND:
             # Late move pruning
-            #if move_count >= (3 + depth**2) // (2 - improving):
-            #    skip_quiets = True
+            if move_count >= (3 + depth**2) // (2 - improving):
+                skip_quiets = True
             # Quiet history pruning
             if (depth < 9 
                 and not tactical

@@ -344,11 +344,73 @@ def is_legal(pos: Position, move: Move) -> bool:
 
     if move is NULL_MOVE:
         return False
+    
+    end = move_end(move)
+    start = move_start(move)
+    flag = move_flag(move)
+    piece = move_piece(move)
 
-    if move_piece(move) != pos.board[move_start(move)]:
+    if piece != pos.board[start]:
         return False
 
-    if is_tactical(move):
-        return move in set(gen_tacticals(pos))
+    if flag != ENPASSANT and bool(is_capture(move)) != bool(pos.board[end]):
+        return False
+    
+    piece_type = piece & ~0x1
 
-    return move in set(gen_quiets(pos))
+    if piece_type in (PAWN, KING) and flag:
+        
+        if is_tactical(move):
+            for tactical in gen_tacticals(pos):
+                if move_piece(tactical) & ~0x1 not in (PAWN, KING):
+                    return False
+                if move == tactical:
+                    return True
+
+        else:
+            for quiet in gen_quiets(pos):
+                if move_piece(quiet) & ~0x1 not in (PAWN, KING):
+                    return False
+                if move == quiet:
+                    return True
+
+    if piece_type is PAWN:        
+        if is_capture(move):
+            return (
+                PAWN_ATTACKS[pos.side][start] & pos.bitboards[not pos.side]
+                & pos.pin_masks[start] & pos.check_mask & (1 << end)
+            )
+        return (
+            ~pos.occupied
+            & pos.pin_masks[start] & pos.check_mask & (1 << end)
+        )
+    
+    if piece_type is KNIGHT:
+        return (
+            KNIGHT_ATTACKS[start] & ~pos.bitboards[pos.side]
+            & pos.pin_masks[start] & pos.check_mask & (1 << end)
+        )
+    
+    if piece_type is BISHOP:
+        return (
+            bishop_attacks(start, pos.occupied) & ~pos.bitboards[pos.side]
+            & pos.pin_masks[start] & pos.check_mask & (1 << end)
+        )
+    
+    if piece_type is ROOK:
+        return (
+            rook_attacks(start, pos.occupied) & ~pos.bitboards[pos.side]
+            & pos.pin_masks[start] & pos.check_mask & (1 << end)
+        )
+    
+    if piece_type is QUEEN:
+        return (
+            queen_attacks(start, pos.occupied) & ~pos.bitboards[pos.side]
+            & pos.pin_masks[start] & pos.check_mask & (1 << end)
+        )
+
+    else:
+        return (
+            KING_ATTACKS[start] & ~pos.bitboards[pos.side]
+            & ~pos.attacked & (1 << end)
+        )

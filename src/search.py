@@ -405,22 +405,21 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             r = LMR[min(depth, 63)][min(non_pruned_count, 63)]
             # Quiet reduction
             if not tactical:
+                if cut_node:
+                    r += 1
                 if not is_pv:
                     r += 1
                 if not improving:
                     r += 1
                 if special_quiet:
                     r -= 2
-                if cut_node:
-                    r += 1
                 if new_pos.in_check:
-                    r += 1
+                    r -= 1
                 r -= quiet_history // 20480
             # Tactical reduction
             else:
                 th = get_tactical_history(pos, data, move)
-                r = 1 - 4 * th // (abs(th) + 24576)
-                r += cut_node
+                r = cut_node + 1 - 4 * th // (abs(th) + 24576)
             # Make sure we don't reduce or extend too much
             r = min(depth - 1, max(r, 1))
 

@@ -476,7 +476,10 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             bound = UPPER_BOUND
         else:
             bound = EXACT_BOUND
-        tt_put(tt, pos, best_value, depth, bound, best_move)
+        if tte and bound is UPPER_BOUND and tte.bound is LOWER_BOUND:
+            tt_put(tt, pos, best_value, depth, bound, tt_move)
+        else:
+            tt_put(tt, pos, best_value, depth, bound, best_move)            
 
     return best_value 
 

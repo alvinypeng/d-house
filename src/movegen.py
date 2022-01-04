@@ -21,20 +21,21 @@ def gen_tacticals(pos: Position) -> iter:
     occupied = pos.occupied
     attacked = pos.attacked
     checkers = pos.checkers
-
-    # Get king square
-    king = KING + side
-    start = msb(bitboards[king])
-    # King attacks bitboard
-    attacks = KING_ATTACKS[start] & bitboards[xside] & ~attacked
-    # Loop through king attacks
-    while attacks:
-        end = msb(attacks)
-        attacks ^= 1 << end
-        yield make_move(start, end, king, True)
         
     # Only king moves if more than one checker
     if bits(checkers) > 1:
+        
+        # Get king square
+        king = KING + side
+        start = msb(bitboards[king])
+        # King attacks bitboard
+        attacks = KING_ATTACKS[start] & bitboards[xside] & ~attacked
+        # Loop through king attacks
+        while attacks:
+            end = msb(attacks)
+            attacks ^= 1 << end
+            yield make_move(start, end, king, True)
+        
         return
 
     check_mask = pos.check_mask
@@ -201,6 +202,17 @@ def gen_tacticals(pos: Position) -> iter:
                 attacks ^= 1 << end
                 yield make_move(start, end, piece, True)
                 
+    # Get king square
+    king = KING + side
+    start = msb(bitboards[king])
+    # King attacks bitboard
+    attacks = KING_ATTACKS[start] & bitboards[xside] & ~attacked
+    # Loop through king attacks
+    while attacks:
+        end = msb(attacks)
+        attacks ^= 1 << end
+        yield make_move(start, end, king, True)
+                
 def gen_quiets(pos: Position) -> iter:
     '''Generate quiet moves.'''
 
@@ -212,20 +224,21 @@ def gen_quiets(pos: Position) -> iter:
     occupied = pos.occupied
     attacked = pos.attacked
     checkers = pos.checkers
-
-    # Get king square
-    king = KING + side
-    start = msb(bitboards[king])
-    # King attacks bitboard
-    attacks = KING_ATTACKS[start] & ~occupied & ~attacked
-    # Loop through king attacks
-    while attacks:
-        end = msb(attacks)
-        attacks ^= 1 << end
-        yield make_move(start, end, king)
         
     # Only king moves if more than one checker
     if bits(checkers) > 1:
+        
+        # Get king square
+        king = KING + side
+        start = msb(bitboards[king])
+        # King attacks bitboard
+        attacks = KING_ATTACKS[start] & ~occupied & ~attacked
+        # Loop through king attacks
+        while attacks:
+            end = msb(attacks)
+            attacks ^= 1 << end
+            yield make_move(start, end, king)
+        
         return
 
     check_mask = pos.check_mask
@@ -328,6 +341,17 @@ def gen_quiets(pos: Position) -> iter:
                 end = msb(attacks)
                 attacks ^= 1 << end
                 yield make_move(start, end, piece)
+             
+    # Get king square
+    king = KING + side
+    start = msb(bitboards[king])
+    # King attacks bitboard
+    attacks = KING_ATTACKS[start] & ~occupied & ~attacked
+    # Loop through king attacks
+    while attacks:
+        end = msb(attacks)
+        attacks ^= 1 << end
+        yield make_move(start, end, king)
                 
 def gen_perft(pos: Position):
     '''Generate all moves for perft purposes.'''

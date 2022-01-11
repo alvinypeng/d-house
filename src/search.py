@@ -18,7 +18,7 @@ MIN_THREADS = 1
 MAX_THREADS = 4
 THREADS = 1
 
-WINDOW_SIZE = 8
+WINDOW_SIZE = 10
 
 UNKNOWN = 32257  # Some logic requires that UNKNOWN > CHECKMATE
 CHECKMATE = 32256
@@ -27,12 +27,12 @@ TB_WIN_BOUND = 20000
 
 DELTA_CUTOFF = 150
 SEE_PRUNE_CUTOFF = 20
-SEE_PRUNE_CAPTURE_CUTOFF = 80
+SEE_PRUNE_CAPTURE_CUTOFF = 90
 
 LMR = zeros(MAX_PLY, 64)
 STATIC_PRUNE = zeros(2, MAX_PLY)
 
-# Ethereal's late move reduction table
+# Late move reduction table
 for depth in range(1, MAX_PLY):
     for moves in range(1, 64):
         LMR[depth][moves] = int(0.8 + log(depth) * log(1.2 * moves) / 2.5)
@@ -492,7 +492,7 @@ def aspiration_window(pos: Position, value: Value,
     '''
 
     # Shrink window after the first few iterations
-    if depth > 6 and abs(value) <= 1000:
+    if depth > 4 and abs(value) <= 1000:
         alpha = max(value - WINDOW_SIZE, -CHECKMATE)
         beta = min(value + WINDOW_SIZE, CHECKMATE)
         delta = WINDOW_SIZE
@@ -596,7 +596,7 @@ def search(pos: Position, depth: int, time_ms: int, tt: Array) -> None:
         if not any([t.is_alive() for t in threads]):
             break
         # Sleep to avoid hogging cpu
-        sleep(0.1)
+        sleep(0.01)
     else:
         for thread in reversed(threads):
             thread.terminate()

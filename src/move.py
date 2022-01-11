@@ -8,7 +8,7 @@ DOUBLE = 2
 ENPASSANT = 3
 
 def make_move(start: int, end: int, piece: Piece, capture: bool=False,
-              flag: int = NO_FLAG) -> Move:
+              flag: int=NO_FLAG) -> Move:
     '''
     Move is encoded as a 21-bit integer:
 

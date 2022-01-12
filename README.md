@@ -18,6 +18,7 @@ The creation of this chess engine would not have been possible without the follo
 * [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)<br/>
 * [Andy Grant - Ethereal](https://github.com/AndyGrant/Ethereal)<br/>
 * [Daniel Inführ - Gigantua](https://github.com/Gigantua/Gigantua)<br/>
+* [Erik Madsen - MadChess](https://www.madchess.net/)<br/>
 * [Jay Honnold - Berserk](https://github.com/jhonnold/berserk)<br/>
 * [Maksim Korzh - BBC](https://github.com/maksimKorzh/bbc)<br/>
 * [Stockfish Team - Stockfish](https://github.com/official-stockfish/Stockfish)<br/>

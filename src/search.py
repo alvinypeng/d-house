@@ -14,9 +14,9 @@ from position import *
 from search_data import *
 from transposition import *
 
+THREADS = 1
 MIN_THREADS = 1
 MAX_THREADS = 4
-THREADS = 1
 
 WINDOW_SIZE = 8
 

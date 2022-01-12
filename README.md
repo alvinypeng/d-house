@@ -9,9 +9,12 @@ However, you may need to install a program such as
 Currently only tested on Windows but may work on other operating systems.
 
 # Performance
-D-house appears to play better single-core rather than multi-core for some reason.
+D-house is best run with Python version 3.9 and appears to play better single-core rather than multi-core for some reason.
 
-Playing strength is mediocre in fast time controls, but scales up in medium to long time controls (e.g. 40/15 and 40/40).
+Playing strength is mediocre in fast time controls, but scales up in medium to long time controls (e.g. 40/15 and 40/40). In the testing game shown below, D-house (black) wins with a French Defense against [MadChess 3.0](http://ccrl.chessdom.com/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=MadChess%203.0%2064-bit#MadChess_3_0_64-bit) (white) in a 40/15 classical game.
+
+<img src="images/MadChess 3.0 vs D-house 0.6.gif" width="300" height="300">
+
 
 # Influences
 The creation of this chess engine would not have been possible without the following resources:

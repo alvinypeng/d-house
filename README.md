@@ -10,6 +10,7 @@ Currently only tested on Windows but may work on other operating systems.
 
 # Performance
 D-house appears to play better single-core rather than multi-core for some reason.
+
 Playing strength is mediocre in fast time controls, but scales up in medium to long time controls (e.g. 40/15 and 40/40).
 
 # Influences

@@ -3,7 +3,7 @@ D-house is a UCI-compliant chess engine written in Python.
 
 # Run it
 D-house only uses the Python standard library, so you only need a working version of Python 3.9 or above.
-However, you may need to install a program such as 
+However, you will need to install a program such as 
 [pyinstaller](https://pypi.org/project/pyinstaller/), or [py2exe](https://pypi.org/project/py2exe/) if you wish to create an executable. 
 ```
 pyinstaller --onefile d-house.py

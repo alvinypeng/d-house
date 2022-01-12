@@ -42,7 +42,7 @@ for depth in range(MAX_PLY):
     STATIC_PRUNE[0][depth] = -SEE_PRUNE_CUTOFF * depth * depth
     STATIC_PRUNE[1][depth] = -SEE_PRUNE_CAPTURE_CUTOFF * depth
 
-def set_thread_count(count: int = 1) -> None:
+def set_thread_count(count: int=1) -> None:
     '''Set the number of threads.'''
     global THREADS
     THREADS = min(MAX_THREADS, max(MIN_THREADS, count))
@@ -199,7 +199,7 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             return tt_value
 
     # IIR
-    if depth >= 4 and not tt_move and not excluded:
+    if depth > 3 and not tt_move and not excluded:
         depth -= 1
 
     # Get static evaluation
@@ -316,7 +316,7 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             quiet_history = 0
             special_quiet = False
 
-        if best_value > -MATE_BOUND:
+        if best_value > -MATE_BOUND and not is_root:
             # Late move pruning
             if move_count >= (3 + depth**2) // (2 - improving):
                 skip_quiets = True
@@ -355,7 +355,6 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
         # Singular extension: extend if one move is better than the rest
         if (tte
             and depth > 6 
-            and not is_root
             and not excluded
             and move is tt_move 
             and tte.depth >= depth - 3
@@ -378,7 +377,6 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
         # History extension: extend if the tt has a good history score
         elif (tte
               and depth > 6 
-              and not is_root 
               and move is tt_move 
               and quiet_history >= 98304):
             extension = 1

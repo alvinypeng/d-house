@@ -8,9 +8,11 @@ However, you may need to install a program such as
 ```
 pyinstaller --onefile d-house.py
 ```
+Currently only tested on Windows but may work on other operating systems.
+
 D-house currently plays best on CPython version 3.9.
 
-Currently only tested on Windows but may work on other operating systems.
+
 
 # Performance
 D-house appears to play better single-core rather than multi-core for some reason.

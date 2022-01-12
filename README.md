@@ -15,7 +15,7 @@ Playing strength is mediocre in fast time controls, but scales up in medium to l
 
 <img src="images/MadChess 3.0 vs D-house 0.6.gif" width="300" height="300">
 
-**MadChess 3.0 vs D-house 0.6, 0-1** ([PGN](images/MadChess 3.0 vs D-house 0.6.pgn))
+**MadChess 3.0 vs D-house 0.6, 0-1** [PGN](images/MadChess 3.0 vs D-house 0.6.pgn)
 
 # Influences
 The creation of this chess engine would not have been possible without the following resources:

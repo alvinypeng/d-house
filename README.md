@@ -10,7 +10,7 @@ pyinstaller --onefile d-house.py
 ```
 Currently only tested on Windows but may work on other operating systems.
 
-D-house currently plays best on CPython version 3.9.
+I recommend running with Python 3.9 instead of 3.10 for the best performance. Future versions of Python are planned to be up to [5 times faster!](https://github.com/markshannon/faster-cpython/blob/master/plan.md). I expect this engine to improve with subsequent Python releases.
 
 
 

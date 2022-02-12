@@ -91,7 +91,7 @@ def gen_tacticals(pos: Position) -> iter:
                 king_sq = msb(bitboards[WHITE_KING])
                 horizontal_sliders = (
                     (bitboards[BLACK_ROOK] | bitboards[BLACK_QUEEN])
-                    & RANK_MASKS[rank_of(king_sq)]
+                    & RANK_MASKS[rank_of(king_sq)] & RANK_5
                 )
                 # Check if there is a horizontal pin
                 while horizontal_sliders:
@@ -153,7 +153,7 @@ def gen_tacticals(pos: Position) -> iter:
                 king_sq = msb(bitboards[BLACK_KING])
                 horizontal_sliders = (
                     (bitboards[WHITE_ROOK] | bitboards[WHITE_QUEEN])
-                    & RANK_MASKS[rank_of(king_sq)]
+                    & RANK_MASKS[rank_of(king_sq)] & RANK_4
                 )
                 # Check if there is a horizontal pin
                 while horizontal_sliders:

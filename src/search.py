@@ -555,7 +555,7 @@ def iterative_deepening(pos: Position, depth: int, thread_no: int,
         time_elapsed = perf_counter() - start
 
         # Print info
-        if thread_no == 0 and d > 4:
+        if thread_no == 0:
             info = f'info depth {d} '
             info += score_str
             info += (

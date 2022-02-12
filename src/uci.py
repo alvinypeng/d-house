@@ -10,7 +10,7 @@ MAX_MOVE_TIME = 120_000  # 2 minute maximum think time
 def print_options():
     '''Prints available engine configurations.'''
     
-    print('id name D-House 0.6')
+    print('id name D-House 0.61')
     print('id author Alvin Peng')
     print('option name Clear Hash type button')
     print('option name Threads type spin default 1 min 1 max 4')

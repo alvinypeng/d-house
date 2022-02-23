@@ -3,7 +3,7 @@ from perft import *
 from search import *
 from transposition import *
 
-MOVE_OVERHEAD = 500       # 500ms move overhead
+MOVE_OVERHEAD = 100       # 100ms move overhead
 MIN_MOVE_TIME = 1000      # 1000ms minimum move time
 MAX_MOVE_TIME = 120_000  # 2 minute maximum think time
 

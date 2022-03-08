@@ -1,10 +1,7 @@
-from functools import lru_cache as cache_evaluation
-
 from defs import *
 from nnue import *
 from position import *
 
-@cache_evaluation(maxsize=0xFFFF)
 def evaluate(pos: Position) -> Value:
     '''Main evaluation function.'''
 
@@ -17,9 +14,10 @@ def evaluate(pos: Position) -> Value:
 
     # Hidden layer forward propogation
     v = OUTPUT_BIAS * QUANTIZATION_PRECISION_IN + sum([
-        + (ours[i] if ours[i] > 0 else 0) * HIDDEN_WEIGHTS[i]
-        + (theirs[i] if theirs[i] > 0 else 0) * HIDDEN_WEIGHTS[i + N_HIDDEN]
-        for i in range(N_HIDDEN)
+        + (our_activation * our_weight if our_activation > 0 else 0)
+        + (their_activation * their_weight if their_activation > 0 else 0)
+        for our_activation, their_activation, our_weight, their_weight
+        in zip(ours, theirs, OUR_HIDDEN_WEIGHTS, THEIR_HIDDEN_WEIGHTS)
     ])
-
+    
     return Value(v / QUANTIZATION_PRECISION_IN / QUANTIZATION_PRECISION_OUT)

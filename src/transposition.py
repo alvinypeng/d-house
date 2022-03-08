@@ -1,4 +1,4 @@
-from multiprocessing import Array
+from multiprocessing import Array as TT
 from collections import namedtuple
 from sys import getsizeof
 
@@ -13,28 +13,17 @@ EXACT_BOUND = 2
 UPPER_BOUND = 3
 
 # Hash sizes (MB)
-MIN_HASH_SIZE = 1
-MAX_HASH_SIZE = 1024
-HASH_SIZE = 128
-OVERHEAD_SIZE = 4 * getsizeof(Array('q', 1))
+MIN_MB = 4
+MAX_MB = 4096
+DEFAULT_MB = 32
+ENTRIES_PER_MB = 25000
 
 TTEntry = namedtuple('TTEntry', 'value depth bound move')
 
-def make_tt(size: int=HASH_SIZE) -> None:
-    '''Create transposition table and evaluation cache.'''
+def make_tt(mb: int) -> None:
+    return TT('q', ENTRIES_PER_MB * mb, lock=False)
 
-    size = max(min(MAX_HASH_SIZE, size), MIN_HASH_SIZE)
-
-    size *= 1_000_000           # Size in bytes
-    size -= OVERHEAD_SIZE       # Multiprocessing Array overhead
-    size /= getsizeof(1 << 64)  # Entry (64 bit integer) memory size
-    size /= 1.1                 # In case of additional overhead
-    size = int(size)    
-
-    # Lock-less table
-    return Array('q', size, lock=False)
-
-def tt_get(tt: Array, pos: Position) -> TTEntry:
+def tt_get(tt: TT, pos: Position) -> TTEntry:
     '''Gets entry from transposition table.'''
 
     key = pos.__hash__()
@@ -49,7 +38,7 @@ def tt_get(tt: Array, pos: Position) -> TTEntry:
                    (entry_llong >> 40) & 0x3,       # bound
                    (entry_llong >> 19) & 0x1fffff)  # move
 
-def tt_put(tt: Array, pos: Position,
+def tt_put(tt: TT, pos: Position,
            value: Value, depth: int, bound: int, move: Move) -> None:
     '''
     Stores transposition table entry in the following format:
@@ -75,6 +64,6 @@ def tt_put(tt: Array, pos: Position,
         tt[index] = ((value << 48) | (depth << 42) |
                      (bound << 40) | (move << 19) | (short_key))
 
-def hash_full(tt: Array) -> bool:
+def hash_full(tt: TT) -> int:
     '''Estimates load factor of transposition table (1 = 0.1%)'''
     raise NotImplementedError

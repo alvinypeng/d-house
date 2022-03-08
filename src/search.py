@@ -1,8 +1,5 @@
 from math import log
 from time import sleep, perf_counter
-from multiprocessing import Array
-from multiprocessing import Value as BestMove
-from multiprocessing import Process as PseudoThread
 import sys
 
 from defs import *
@@ -11,19 +8,10 @@ from history import *
 from evaluate import *
 from movepick import *
 from position import *
+from pseudothread import *
 from search_data import *
+from timeman import *
 from transposition import *
-
-THREADS = 1
-MIN_THREADS = 1
-MAX_THREADS = 4
-
-WINDOW_SIZE = 8
-
-UNKNOWN = 32257  # Some logic requires that UNKNOWN > CHECKMATE
-CHECKMATE = 32256
-MATE_BOUND = 30000
-TB_WIN_BOUND = 20000
 
 DELTA_CUTOFF = 150
 SEE_PRUNE_CUTOFF = 20
@@ -42,11 +30,115 @@ for depth in range(MAX_PLY):
     STATIC_PRUNE[0][depth] = -SEE_PRUNE_CUTOFF * depth * depth
     STATIC_PRUNE[1][depth] = -SEE_PRUNE_CAPTURE_CUTOFF * depth
 
-def set_thread_count(count: int=1) -> None:
-    '''Set the number of threads.'''
-    global THREADS
-    THREADS = min(MAX_THREADS, max(MIN_THREADS, count))
+def spin(thread_no: int, shared: SharedMemory) -> None:
+    
+    global MAIN_THREAD, search_flag, tt 
+    
+    MAIN_THREAD = thread_no == 0
+    search_flag = shared.search_flag
+    tt = shared.tt
+    
+    data = SearchData()
 
+    while True:
+        if search_flag.value == True:
+            try:
+                data.nodes = 0
+                data.stack = Stack()
+                search(shared, data)
+            except SearchStopped:
+                pass
+            finally:
+                if MAIN_THREAD:
+                    search_flag.value = False
+                    shared.nodes.value = 0
+                    print(f'bestmove {move_to_str(shared.bestmove.value)}')
+                    sys.stdout.flush()
+        sleep(0.001)
+
+def search(shared: SharedMemory, data: SearchData) -> None:
+
+    global timeman
+
+    depth_limit, movetime, time, inc, movestogo = shared.limits
+    timeman = TimeManager(search_flag, movetime, time, inc, movestogo)
+
+    pos = shared.pos
+    alpha = -CHECKMATE
+    beta = CHECKMATE
+    value = 0
+
+    values = []
+    best_moves = []
+
+    # Iterative deepening
+    for depth in range(1, depth_limit + 1):
+        if search_flag.value == False:
+            break
+
+        pv = []
+        search_depth = depth
+
+        if depth > 4 and abs(value) <= 1000:
+            alpha = max(value - WINDOW, -CHECKMATE)
+            beta = min(value + WINDOW, CHECKMATE)
+            delta = WINDOW
+        else:
+            alpha = -CHECKMATE
+            beta = CHECKMATE
+            delta = CHECKMATE
+
+        # Aspiration window
+        while True:
+            value = negamax(pos, alpha, beta, search_depth, False, data, pv)
+            # Update node count
+            with shared.nodes.get_lock():
+                shared.nodes.value += data.nodes
+            data.nodes = 0
+            # Failed low so reduce lower bound and search again
+            if value <= alpha:
+                alpha = max(alpha - delta, -CHECKMATE)
+                beta = (alpha + beta) // 2 
+            # Failed high so increase upper bound and search again
+            elif value >= beta:
+                beta = min(beta + delta, CHECKMATE)
+                search_depth -= abs(value) < 20000
+            # Finish searching this depth because the value is ok
+            else:
+                break
+            # Increase window size because the search failed
+            delta += delta // 2
+
+        if MAIN_THREAD:
+            
+            values.append(value)
+            best_moves.append(pv[0])
+            shared.bestmove.value = pv[0]
+
+            if value >= MATE_BOUND:
+                score = f'mate {int((CHECKMATE - value + 1) // 2)}'
+            elif value <= - MATE_BOUND:
+                score = f'mate {int(-(CHECKMATE + value) // 2)}'
+            else:
+                score = f'cp {value}'
+                
+            seconds = timeman.time_elapsed()
+            time = int(seconds * 1000)
+            nodes = shared.nodes.value
+            nps = int(nodes / seconds)
+            pv_str = ' '.join([move_to_str(move) for move in pv])
+
+            print(f'info '
+                  f'depth {depth} '
+                  f'score {score} '
+                  f'nodes {nodes} '
+                  f'nps {nps} '
+                  f'time {time} '
+                  f'pv {pv_str} ')
+            sys.stdout.flush()
+
+            timeman.update(values, best_moves)
+            
 def quiescence(pos: Position, alpha: Value, beta: Value,
                data: SearchData, pv: list[Move]) -> Value:
     '''
@@ -54,12 +146,16 @@ def quiescence(pos: Position, alpha: Value, beta: Value,
     finally evaluate the position, our evaluation is more reliable.
     '''
 
-    tt = data.tt
     stack = data.stack
     
     child_pv = []
 
     data.nodes += 1
+
+    # Check time
+    if (search_flag.value == False or
+        data.nodes % 63 == 0 and timeman.out_of_time()):
+        raise SearchStopped
 
     # Draw
     if pos.is_material_draw or pos.is_repeated or pos.rule_50 > 99:
@@ -149,7 +245,6 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             cut_node: bool, data: SearchData, pv: list[Move]) -> Value:
     '''Searches a particular node of the game tree.'''
 
-    tt = data.tt
     stack = data.stack
     
     child_pv = []
@@ -171,6 +266,11 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
         return quiescence(pos, alpha, beta, data, pv)
 
     data.nodes += 1
+
+    # Check time
+    if (search_flag.value == False or
+        data.nodes % 63 == 0 and timeman.out_of_time()):
+        raise SearchStopped
 
     if not is_root:
         # Draw
@@ -316,7 +416,7 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             quiet_history = 0
             special_quiet = False
 
-        if best_value > -MATE_BOUND and not is_root:
+        if best_value > -MATE_BOUND:
             # Late move pruning
             if move_count >= (3 + depth**2) // (2 - improving):
                 skip_quiets = True
@@ -480,125 +580,3 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             tt_put(tt, pos, best_value, depth, bound, best_move)            
 
     return best_value 
-
-def aspiration_window(pos: Position, value: Value,
-                      depth: int, data: SearchData, pv: list[Move]) -> None:
-    '''
-    Searches at d - 1 can be a good estimate for a search at depth d.
-    So, we can perform searches with a reduced window size rather than
-    from -CHECKMATE to CHECKMATE to produce more cutoffs.
-    '''
-
-    # Shrink window after the first few iterations
-    if depth > 4 and abs(value) <= 1000:
-        alpha = max(value - WINDOW_SIZE, -CHECKMATE)
-        beta = min(value + WINDOW_SIZE, CHECKMATE)
-        delta = WINDOW_SIZE
-    else:
-        alpha = -CHECKMATE
-        beta = CHECKMATE
-        delta = CHECKMATE
-
-    while True:
-        value = negamax(pos, alpha, beta, depth, False, data, pv)
-        # Failed low so reduce lower bound and search again
-        if value <= alpha:
-            alpha = max(alpha - delta, -CHECKMATE)
-            beta = (alpha + beta) // 2 
-        # Failed high so increase upper bound and search again
-        elif value >= beta:
-            beta = min(beta + delta, CHECKMATE)
-            depth -= abs(value) < TB_WIN_BOUND
-        # Finish searching this depth because the value is ok
-        else:
-            break
-        # Increase window size because the search failed
-        delta += delta // 2
-
-    return value
-
-def iterative_deepening(pos: Position, depth: int, thread_no: int,
-                        tt: Array, node_counts: Array, best: BestMove) -> None:
-    '''
-    We don't know how long a search at a given depth will take. So, we
-    perform a search to depth 1, then 2 and so on until max depth is
-    reached or time is up.
-    '''
-
-    value = 0
-    depth = min(depth, MAX_PLY)
-    data = SearchData(tt=tt)
-    start = perf_counter()
-
-    # Iterative deepening
-    for d in range(1, depth + 1):
-        pv = []
-        value = aspiration_window(pos, value, d, data, pv)
-
-        # Update best move
-        if thread_no == 0:
-            best.value = pv[0]
-            
-        # Update node count
-        node_counts[thread_no] += data.nodes
-        nodes = sum(node_counts)
-        
-        # Score
-        if value >= MATE_BOUND:
-            score_str = f'score mate {int((CHECKMATE - value + 1) // 2)} '
-        elif value <= -MATE_BOUND:
-            score_str = f'score mate {int(-(CHECKMATE + value) // 2)} '
-        else:
-            score_str = f'score cp {value} '
-            
-        # Time
-        time_elapsed = perf_counter() - start
-
-        # Print info
-        if thread_no == 0:
-            info = f'info depth {d} '
-            info += score_str
-            info += (
-                f'nodes {nodes} '
-                f'time {round(time_elapsed * 1e3)} '
-                f'pv '
-            )
-            # PV
-            for move in pv:
-                info += f'{move_to_str(move)} '
-            print(info)
-            sys.stdout.flush()
-
-def search(pos: Position, depth: int, time_ms: int, tt: Array) -> None:
-
-    start = perf_counter()
-    time_s = time_ms / 1000
-
-    best = BestMove('i', next(gen_perft(pos)))
-    node_counts = Array('i', THREADS)
-
-    # Initialize threads
-    threads = []
-    for thread_no in range(THREADS):
-        thread = PseudoThread(target=iterative_deepening,
-                              args=(pos, depth, thread_no,
-                                    tt, node_counts, best))
-        threads.append(thread)
-
-    # Start threads
-    for thread in reversed(threads):
-        thread.start()
-
-    while perf_counter() - start <= time_s:
-        # If all processes are done, we break
-        if not any([t.is_alive() for t in threads]):
-            break
-        # Sleep to avoid hogging cpu
-        sleep(0.01)
-    else:
-        for thread in reversed(threads):
-            thread.terminate()
-            thread.join()
-
-    # Print best move
-    print(f'bestmove {move_to_str(best.value)}')

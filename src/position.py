@@ -24,7 +24,7 @@ MATERIAL_KEYS = (
     0, 0,
 )
 
-UPDATE_CASTLING_RIGHTS_KEYS = (
+UPDATE_CASTLING_KEYS = (
      7, 15, 15, 15,  3, 15, 15, 11,
     15, 15, 15, 15, 15, 15, 15, 15,
     15, 15, 15, 15, 15, 15, 15, 15,
@@ -293,19 +293,8 @@ def parse_fen(fen: str=STARTING_FEN) -> Position:
             material_key += MATERIAL_KEYS[piece]
 
     # Initialize accumulator
-    for color in (WHITE, BLACK):
-        accumulator[color] = [*HIDDEN_BIASES]
-        occupied = bitboards[WHITE] | bitboards[BLACK]
-        # Loop through all pieces
-        while occupied:
-            square = msb(occupied)
-            occupied ^= 1 << square
-            piece = board[square]
-            feature_index = FEATURE_INDEX[color][piece][square]
-            # Initialize accumulation
-            for i in range(N_HIDDEN):
-                accumulator[color][i] += FEATURE_WEIGHTS[feature_index + i]
-        
+    accumulator = make_accumulator(board)
+
     return Position(board, bitboards, side,
                     castling, ep_square, material_key, previous, accumulator)
 
@@ -345,6 +334,7 @@ def do_move(pos: Position, move: Move) -> Position:
         if flag is ENPASSANT:
             ep_pawn_square = pos.ep_square + (NORTH, SOUTH)[xside]
             ep_pawn = PAWN + xside
+            board[ep_pawn_square] = NO_PIECE
             bitboards[ep_pawn] ^= 1 << ep_pawn_square
             bitboards[xside] ^= 1 << ep_pawn_square
             material_key -= MATERIAL_KEYS[ep_pawn]
@@ -374,44 +364,34 @@ def do_move(pos: Position, move: Move) -> Position:
     # Update accumulator for captures
     if capture:
         # Update white accumulation
-        f0 = FEATURE_INDEX[WHITE][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        f1 = FEATURE_INDEX[WHITE][dirty_pieces[1][0]][dirty_pieces[1][1]]
-        f2 = FEATURE_INDEX[WHITE][dirty_pieces[2][0]][dirty_pieces[2][1]]
-        accumulation = accumulator[WHITE]
-        accumulator[WHITE] = [+ accumulation[i]
-                              + FEATURE_WEIGHTS[f0 + i]
-                              - FEATURE_WEIGHTS[f1 + i]
-                              - FEATURE_WEIGHTS[f2 + i]
-                              for i in range(N_HIDDEN)]
+        acc = accumulator[WHITE]
+        vec0 = FW_VECTORS[WHITE][dirty_pieces[0][0]][dirty_pieces[0][1]]
+        vec1 = FW_VECTORS[WHITE][dirty_pieces[1][0]][dirty_pieces[1][1]]
+        vec2 = FW_VECTORS[WHITE][dirty_pieces[2][0]][dirty_pieces[2][1]]
+        accumulator[WHITE] = [a + v0 - v1 - v2 for a, v0, v1, v2
+                              in zip(acc, vec0, vec1, vec2)]
         # Update black accumulation
-        f0 = FEATURE_INDEX[BLACK][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        f1 = FEATURE_INDEX[BLACK][dirty_pieces[1][0]][dirty_pieces[1][1]]
-        f2 = FEATURE_INDEX[BLACK][dirty_pieces[2][0]][dirty_pieces[2][1]]
-        accumulation = accumulator[BLACK]
-        accumulator[BLACK] = [+ accumulation[i]
-                              + FEATURE_WEIGHTS[f0 + i]
-                              - FEATURE_WEIGHTS[f1 + i]
-                              - FEATURE_WEIGHTS[f2 + i]
-                              for i in range(N_HIDDEN)]
+        acc = accumulator[BLACK]
+        vec0 = FW_VECTORS[BLACK][dirty_pieces[0][0]][dirty_pieces[0][1]]
+        vec1 = FW_VECTORS[BLACK][dirty_pieces[1][0]][dirty_pieces[1][1]]
+        vec2 = FW_VECTORS[BLACK][dirty_pieces[2][0]][dirty_pieces[2][1]]
+        accumulator[BLACK] = [a + v0 - v1 - v2 for a, v0, v1, v2
+                              in zip(acc, vec0, vec1, vec2)]
 
     # Update accumulator for normal move
     else:
         # Update white accumulation
-        f0 = FEATURE_INDEX[WHITE][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        f1 = FEATURE_INDEX[WHITE][dirty_pieces[1][0]][dirty_pieces[1][1]]
-        accumulation = accumulator[WHITE]
-        accumulator[WHITE] = [+ accumulation[i]
-                              + FEATURE_WEIGHTS[f0 + i]
-                              - FEATURE_WEIGHTS[f1 + i]
-                              for i in range(N_HIDDEN)]
+        acc = accumulator[WHITE]
+        vec0 = FW_VECTORS[WHITE][dirty_pieces[0][0]][dirty_pieces[0][1]]
+        vec1 = FW_VECTORS[WHITE][dirty_pieces[1][0]][dirty_pieces[1][1]]
+        accumulator[WHITE] = [a + v0 - v1 for a, v0, v1
+                              in zip(acc, vec0, vec1)]
         # Update black accumulation
-        f0 = FEATURE_INDEX[BLACK][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        f1 = FEATURE_INDEX[BLACK][dirty_pieces[1][0]][dirty_pieces[1][1]]
-        accumulation = accumulator[BLACK]
-        accumulator[BLACK] = [+ accumulation[i]
-                              + FEATURE_WEIGHTS[f0 + i]
-                              - FEATURE_WEIGHTS[f1 + i]
-                              for i in range(N_HIDDEN)]
+        acc = accumulator[BLACK]
+        vec0 = FW_VECTORS[BLACK][dirty_pieces[0][0]][dirty_pieces[0][1]]
+        vec1 = FW_VECTORS[BLACK][dirty_pieces[1][0]][dirty_pieces[1][1]]
+        accumulator[BLACK] = [a + v0 - v1 for a, v0, v1
+                              in zip(acc, vec0, vec1)]
 
     # Exit early for normal move
     if not flag:
@@ -454,25 +434,20 @@ def do_move(pos: Position, move: Move) -> Position:
         bitboards[side] |= 1 << rook_end
 
         # Update white accumulation
-        f0 = FEATURE_INDEX[WHITE][rook][rook_end]
-        f1 = FEATURE_INDEX[WHITE][rook][rook_start]
-        accumulation = accumulator[WHITE]
-        accumulator[WHITE] = [+ accumulation[i]
-                              + FEATURE_WEIGHTS[f0 + i]
-                              - FEATURE_WEIGHTS[f1 + i]
-                              for i in range(N_HIDDEN)]
+        acc = accumulator[WHITE]
+        vec0 = FW_VECTORS[WHITE][rook][rook_end]
+        vec1 = FW_VECTORS[WHITE][rook][rook_start]
+        accumulator[WHITE] = [a + v0 - v1 for a, v0, v1
+                              in zip(acc, vec0, vec1)]
         # Update black accumulation
-        f0 = FEATURE_INDEX[BLACK][rook][rook_end]
-        f1 = FEATURE_INDEX[BLACK][rook][rook_start]
-        accumulation = accumulator[BLACK]
-        accumulator[BLACK] = [+ accumulation[i]
-                              + FEATURE_WEIGHTS[f0 + i]
-                              - FEATURE_WEIGHTS[f1 + i]
-                              for i in range(N_HIDDEN)]
+        acc = accumulator[BLACK]
+        vec0 = FW_VECTORS[BLACK][rook][rook_end]
+        vec1 = FW_VECTORS[BLACK][rook][rook_start]
+        accumulator[BLACK] = [a + v0 - v1 for a, v0, v1
+                              in zip(acc, vec0, vec1)]
         
     # Update castling rights
-    castling &= UPDATE_CASTLING_RIGHTS_KEYS[start]
-    castling &= UPDATE_CASTLING_RIGHTS_KEYS[end]
+    castling &= UPDATE_CASTLING_KEYS[start] & UPDATE_CASTLING_KEYS[end]
 
     # Update previous
     if piece & ~0x1 is PAWN or capture:

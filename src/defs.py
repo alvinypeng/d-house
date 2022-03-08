@@ -1,5 +1,8 @@
 from copy import deepcopy
 
+VERSION = 'dev 1.0.0'
+
+MAX_DEPTH = 32
 MAX_PLY = 64
 
 Bitboard = int
@@ -23,8 +26,7 @@ SQUARES = (
     A3, B3, C3, D3, E3, F3, G3, H3,
     A2, B2, C2, D2, E2, F2, G2, H2,
     A1, B1, C1, D1, E1, F1, G1, H1,
-    SQUARE_NB
-) = range(65)
+) = range(64)
 
 PIECE_NAMES = '. PpNnBbRrQqKk'
 
@@ -58,9 +60,13 @@ PIECE_VALUES = (
     30000, 30000,  # White/Black King
 )
 
+WINDOW = 8
+
 UNKNOWN = 32257
 CHECKMATE = 32256
 MATE_BOUND = 30000
+
+class SearchStopped(Exception): pass
 
 def zeros(*args):
     a = 0

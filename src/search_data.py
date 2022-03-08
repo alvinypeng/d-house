@@ -25,9 +25,7 @@ class Stack:
 # Other engines typically call this class/struct "Thread"
 class SearchData:
 
-    def __init__(self, tt: Array):
-
-        self.tt = tt
+    def __init__(self):
 
         self.nodes = 0
         self.seldepth = 0

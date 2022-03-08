@@ -14,6 +14,9 @@ def perft(pos: Position, depth: int) -> int:
         return 1
 
     for move in gen_perft(pos):
+        #if not is_legal(pos, move):
+        #    print(pos)
+        #    print(move_to_str(move))
         nodes += perft(do_move(pos, move), depth - 1)
 
     return nodes

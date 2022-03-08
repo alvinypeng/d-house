@@ -366,6 +366,8 @@ def gen_perft(pos: Position):
 def is_legal(pos: Position, move: Move) -> bool:
     '''Used to verify hash/killer/counter is legal.'''
 
+    # TODO: Can make this faster
+
     if move is NULL_MOVE:
         return False
 
@@ -373,7 +375,65 @@ def is_legal(pos: Position, move: Move) -> bool:
         return False
     
     if is_tactical(move):
-        return move in set(gen_tacticals(pos))
-    
-    return move in set(gen_quiets(pos))
-       
+        for legal_tactical in gen_tacticals(pos):
+            if move == legal_tactical:
+                return True
+    else:
+        for legal_quiet in gen_quiets(pos):
+            if move == legal_quiet:
+                return True
+
+    return False
+
+def is_legal(pos, move):
+
+    if move is NULL_MOVE:
+        return False
+
+    board = pos.board
+    piece = move_piece(move)
+    start = move_start(move)
+    end = move_end(move)
+
+    if piece != board[start] or piece % 2 != pos.side:
+        return False
+
+    if move_flag(move):
+        gen_moves = gen_tacticals if is_tactical(move) else gen_quiets
+        for legal_move in gen_moves(pos):
+            if move == legal_move:
+                return True
+        return False
+
+    if bool(is_capture(move)) != bool(board[end]):
+        return False
+
+    piece_type = piece & ~0x1
+
+    if piece_type is KING:
+        return (1 << end) & ~pos.bitboards[pos.side] & ~pos.attacked
+
+    if piece_type is PAWN:
+        if is_capture(move):
+            return ((1 << end) & pos.bitboards[not pos.side]
+                    & pos.pin_masks[start] & pos.check_mask)
+        else:
+            return ((1 << end) & ~pos.occupied
+                    & pos.pin_masks[start] & pos.check_mask)
+
+    if piece_type is KNIGHT:
+        return ((1 << end) & ~pos.bitboards[pos.side]
+                & pos.pin_masks[start] & pos.check_mask)
+
+    if piece_type is BISHOP:
+        return (bishop_attacks(start, pos.occupied) & ~pos.bitboards[pos.side]
+                & pos.pin_masks[start] & pos.check_mask & (1 << end))
+
+    if piece_type is ROOK:
+        return (rook_attacks(start, pos.occupied) & ~pos.bitboards[pos.side]
+                & pos.pin_masks[start] & pos.check_mask & (1 << end))
+
+    if piece_type is QUEEN:
+        return (queen_attacks(start, pos.occupied) & ~pos.bitboards[pos.side]
+                & pos.pin_masks[start] & pos.check_mask & (1 << end))
+

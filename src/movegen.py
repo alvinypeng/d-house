@@ -363,28 +363,6 @@ def gen_perft(pos: Position):
     for move in gen_quiets(pos):
         yield move
 
-def is_legal(pos: Position, move: Move) -> bool:
-    '''Used to verify hash/killer/counter is legal.'''
-
-    # TODO: Can make this faster
-
-    if move is NULL_MOVE:
-        return False
-
-    if move_piece(move) != pos.board[move_start(move)]:
-        return False
-    
-    if is_tactical(move):
-        for legal_tactical in gen_tacticals(pos):
-            if move == legal_tactical:
-                return True
-    else:
-        for legal_quiet in gen_quiets(pos):
-            if move == legal_quiet:
-                return True
-
-    return False
-
 def is_legal(pos, move):
 
     if move is NULL_MOVE:

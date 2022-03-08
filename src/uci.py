@@ -21,7 +21,7 @@ def uci_loop() -> None:
     shared.set_pos(pos)
 
     # Init transposition table
-    mb = 16
+    mb = DEFAULT_MB
     tt = make_tt(mb)
 
     # Init pool

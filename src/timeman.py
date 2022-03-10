@@ -66,6 +66,6 @@ class TimeManager:
             self.alloc *= min(1.04, 1.02 * (difference // 8))
 
         if (values[-1] < 1000
-            and self.time_elapsed() > (2 - self.stability) * self.alloc * 1e3):
+            and self.time_elapsed() > (2 - self.stability) * self.alloc / 2):
             self.search_flag.value = False
         

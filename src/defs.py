@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-VERSION = 'dev 1.0.0'
+VERSION = 'dev 1.0.1'
 
 MAX_DEPTH = 32
 MAX_PLY = 64

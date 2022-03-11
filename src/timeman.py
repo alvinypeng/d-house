@@ -3,7 +3,7 @@ from time import perf_counter
 from defs import *
 from pseudothread import SharedInt
 
-MOVE_OVERHEAD = 100 * 1e-3
+MOVE_OVERHEAD = 100 / 1e3
 
 class TimeManager:
 
@@ -11,24 +11,26 @@ class TimeManager:
                  movetime: int, time: int, inc: int, movestogo: int) -> None:
 
         self.depth = 0
-        self.start = perf_counter()
-
-        self.search_flag = search_flag
-        self.movetime = movetime
-        self.time = time
-        self.inc = inc
-        self.movestogo = min(40, movestogo) if movestogo else 30
+        self.stability = 0
         
-        if self.movetime:
-            self.alloc = self.movetime
-        elif self.time:
+        self.start = perf_counter()
+        self.search_flag = search_flag
+        self.movestogo = min(40, movestogo) if movestogo else 30
+        self.max_alloc = time * (1 if self.movestogo == 1 else 0.9)
+        
+        if movetime:
+            self.alloc = movetime
+        elif time:
             self.alloc = min(time / self.movestogo + inc / 2, time)
         else:
             self.alloc = float('inf')
 
-        self.stability = 0            
-        self.alloc = self.alloc / 1000
-        self.ideal_alloc = self.alloc
+        # Convert from ms to s
+        self.movetime = movetime / 1e3
+        self.time = time / 1e3
+        self.inc = inc / 1e3
+        self.alloc /= 1e3
+        self.max_alloc /= 1e3
 
     def time_elapsed(self):
         return perf_counter() - self.start
@@ -57,13 +59,14 @@ class TimeManager:
 
         difference = values[-1] - values[-2]
 
-        if abs(difference) <= 8:
+        if abs(difference) <= WINDOW:
             return
 
         if difference < 0:
-            self.alloc *= min(1.16, 1.04 * (-difference // 8))
+            self.alloc *= min(1.16, 1.04 * (-difference // WINDOW))
         else:
-            self.alloc *= min(1.04, 1.02 * (difference // 8))
+            self.alloc *= min(1.04, 1.02 * (difference // WINDOW))
+        self.alloc = min(self.alloc, self.max_alloc)
 
         if (values[-1] < 1000
             and self.time_elapsed() > (2 - self.stability) * self.alloc / 2):

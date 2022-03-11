@@ -1,6 +1,14 @@
 # Introduction
 D-house is a UCI-compliant chess engine written in Python.
 
+# UCI configurations
+
+**Hash**
+Size of the hash table in megabytes.
+
+**Threads**
+Number of threads used in searching.
+
 # Run it
 D-house only uses the Python standard library, so you only need a working version of Python 3.9 or above.
 However, you will need to install a program such as 

@@ -4,9 +4,11 @@ D-house is a UCI-compliant chess engine written in Python.
 # UCI configurations
 
 **Hash**
+
 Size of the hash table in megabytes.
 
 **Threads**
+
 Number of threads used in searching.
 
 # Run it

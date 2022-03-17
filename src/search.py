@@ -514,12 +514,7 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
                 if special_quiet:
                     r -= 2
                 if new_pos.in_check:
-                    r -= 1
-                    
-                # SF: Increase reduction if tt_move is a capture
-                #if is_capture(tt_move):
-                #    r += 1
-                    
+                    r -= 1                    
                 r -= quiet_history // 20480
             # Tactical reduction
             else:

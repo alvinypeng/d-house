@@ -71,6 +71,8 @@ def search(shared: SharedMemory, data: SearchData) -> None:
     values = []
     best_moves = []
 
+    find_mate = 1 in {bits(pos.bitboards[WHITE]), bits(pos.bitboards[BLACK])}
+
     # Iterative deepening
     for depth in range(1, depth_limit + 1):
         if search_flag.value == False:
@@ -79,7 +81,7 @@ def search(shared: SharedMemory, data: SearchData) -> None:
         pv = []
         search_depth = depth
 
-        if depth > 4 and abs(value) <= 1000:
+        if depth > 4 and abs(value) <= 1000 and not find_mate:
             alpha = max(value - WINDOW, -CHECKMATE)
             beta = min(value + WINDOW, CHECKMATE)
             delta = WINDOW
@@ -513,6 +515,11 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
                     r -= 2
                 if new_pos.in_check:
                     r -= 1
+                    
+                # SF: Increase reduction if tt_move is a capture
+                #if is_capture(tt_move):
+                #    r += 1
+                    
                 r -= quiet_history // 20480
             # Tactical reduction
             else:

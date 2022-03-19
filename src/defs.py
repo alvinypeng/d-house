@@ -2,8 +2,8 @@ from copy import deepcopy
 
 VERSION = 'dev 1.0.3'
 
-MAX_DEPTH = 32
-MAX_PLY = 100
+MAX_DEPTH = 60
+MAX_PLY = 120
 
 Bitboard = int
 Value = int

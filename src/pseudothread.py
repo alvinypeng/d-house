@@ -7,7 +7,7 @@ from position import *
 from transposition import *
 
 MIN_THREADS = 1
-MAX_THREADS = 4
+MAX_THREADS = 8
 DEFAULT_THREADS = 1
 
 class SharedMemory:
@@ -20,18 +20,6 @@ class SharedMemory:
         
         self.limits = Array('L', 5, lock=False)
         self.pos_repr = Array('u', 65535, lock=False)
-
-    def reset(self) -> None:
-
-        self.search_flag.value = False
-        self.bestmove.value = 0
-        self.nodes.value = 0
-
-        for i in range(5):
-            self.limits[i] = 0
-
-        for i in range(65536):
-            self.pos_repr[i] = '\x00'
     
     def set_limits(self, depth: int,
                    movetime: int, time: int, inc: int, movestogo: int) -> None:

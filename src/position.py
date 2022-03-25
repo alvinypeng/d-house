@@ -229,11 +229,50 @@ class Position:
 
         return string + '\n'
 
-    def fen(self) -> str:
-        # TODO
-        for square, piece in enumerate(self.board):
-            pass
-        return 'TODO'
+def as_fen(pos: Position) -> str:
+    '''Creates fen from Position.'''
+
+    fen = ''
+    empty_spaces = 0
+
+    # Board
+    for square, piece in enumerate(pos.board):
+        # New rank
+        if (1 << square) & A_FILE:
+            fen += '/'
+        # No piece
+        if piece is NO_PIECE:
+            empty_spaces += 1
+            if empty_spaces and (1 << square) & H_FILE:
+                fen += str(empty_spaces)
+                empty_spaces = 0
+        # Piece
+        else:
+            if empty_spaces:
+                fen += str(empty_spaces)
+                empty_spaces = 0
+            fen += PIECE_NAMES[piece]
+
+    # Side
+    fen += ' b ' if pos.side else ' w '
+
+    # Castling
+    castling = ''
+    if pos.castling & 1: castling += 'K'
+    if pos.castling & 2: castling += 'Q'
+    if pos.castling & 4: castling += 'k'
+    if pos.castling & 8: castling += 'q'
+    fen += castling if castling else '-'
+    fen += ' '
+
+    # En passant square
+    fen += SQUARE_NAMES[pos.ep_square] if pos.ep_square else '-'
+    fen += ' '
+
+    # Move clocks
+    fen += str(len(pos.previous)) + ' 1'
+
+    return fen[1:]
 
 def parse_fen(fen: str=STARTING_FEN) -> Position:
     '''Creates a position from a FEN.'''
@@ -247,7 +286,7 @@ def parse_fen(fen: str=STARTING_FEN) -> Position:
     previous = set()
     accumulator = zeros(2)
 
-    fen += ' 0 1'    
+    fen += ' 0 1'
     tokens = fen.split()
 
     # Put pieces on board

@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-VERSION = 'dev 1.0.3'
+VERSION = 'dev 1.1.0'
 
 MAX_DEPTH = 60
 MAX_PLY = 120
@@ -65,6 +65,7 @@ WINDOW = 8
 UNKNOWN = 32257
 CHECKMATE = 32256
 MATE_BOUND = 30000
+TB_WIN = 20000
 
 class SearchStopped(Exception): pass
 

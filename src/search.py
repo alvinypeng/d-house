@@ -42,18 +42,22 @@ def spin(thread_no: int, shared: SharedMemory) -> None:
 
     while True:
         if search_flag.value == True:
+            
             try:
                 data.nodes = 0
                 data.stack = Stack()
                 search(shared, data)
+                
             except SearchStopped:
                 pass
+            
             finally:
                 if MAIN_THREAD:
                     search_flag.value = False
                     shared.nodes.value = 0
                     print(f'bestmove {move_to_str(shared.bestmove.value)}')
                     sys.stdout.flush()
+                    
         sleep(0.001)
 
 def search(shared: SharedMemory, data: SearchData) -> None:
@@ -71,7 +75,7 @@ def search(shared: SharedMemory, data: SearchData) -> None:
     values = []
     best_moves = []
 
-    find_mate = 1 in {bits(pos.bitboards[WHITE]), bits(pos.bitboards[BLACK])}
+    find_mate = 1 in map(bits, pos.bitboards[:2])
 
     # Iterative deepening
     for depth in range(1, depth_limit + 1):
@@ -104,7 +108,7 @@ def search(shared: SharedMemory, data: SearchData) -> None:
             # Failed high so increase upper bound and search again
             elif value >= beta:
                 beta = min(beta + delta, CHECKMATE)
-                search_depth -= abs(value) < 20000
+                search_depth -= abs(value) < TB_WIN
             # Finish searching this depth because the value is ok
             else:
                 break
@@ -156,7 +160,7 @@ def quiescence(pos: Position, alpha: Value, beta: Value,
 
     # Check time
     if (search_flag.value == False or
-        data.nodes % 63 == 0 and timeman.out_of_time()):
+        (MAIN_THREAD and data.nodes % 63 == 0 and timeman.out_of_time())):
         raise SearchStopped
 
     # Draw
@@ -271,7 +275,7 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
 
     # Check time
     if (search_flag.value == False or
-        data.nodes % 63 == 0 and timeman.out_of_time()):
+        (MAIN_THREAD and data.nodes % 63 == 0 and timeman.out_of_time())):
         raise SearchStopped
 
     if not is_root:

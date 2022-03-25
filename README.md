@@ -9,7 +9,11 @@ Size of the hash table in megabytes.
 
 **Threads**
 
-Number of threads used in searching.
+Number of threads used in searching. Set this to the number of CPU cores available for best performance.
+
+**OnlineSyzygy**
+
+Allow D-house to probe the online [lichess](https://tablebase.lichess.ovh) 7-man Syzygy tablebase.
 
 # Run it
 D-house only uses the Python standard library, so you only need a working version of Python 3.9 or above.
@@ -23,7 +27,7 @@ Currently only tested on Windows but may work on other operating systems.
 I recommend running with Python 3.9 instead of 3.10 for the best performance. Future versions of Python are planned to be up to [5 times faster!](https://github.com/markshannon/faster-cpython/blob/master/plan.md) I expect this engine to improve with subsequent Python releases.
 
 # Influences
-The creation of this chess engine would not have been possible without the following resources:
+D-house is derived from Berserk. This chess engine would not have been possible without the following resources:
 * [Jay Honnold - Berserk](https://github.com/jhonnold/berserk)<br/>
 * [Chess Programming Wiki](https://www.chessprogramming.org/Main_Page)<br/>
 * [Andy Grant - Ethereal](https://github.com/AndyGrant/Ethereal)<br/>

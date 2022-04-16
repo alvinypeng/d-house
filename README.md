@@ -24,7 +24,7 @@ pyinstaller --onefile main.py --name=d-house
 ```
 Currently only tested on Windows but may work on other operating systems.
 
-I recommend running with Python 3.9 instead of 3.10 for the best performance. Future versions of Python are planned to be up to [5 times faster!](https://github.com/markshannon/faster-cpython/blob/master/plan.md) I expect this engine to improve with subsequent Python releases.
+Future versions of Python are planned to be up to [5 times faster!](https://github.com/markshannon/faster-cpython/blob/master/plan.md) I expect this engine to improve with subsequent Python releases.
 
 # Influences
 D-house is derived from Berserk. This chess engine would not have been possible without the following resources:

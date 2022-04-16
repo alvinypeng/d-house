@@ -225,7 +225,6 @@ class Position:
         string += '\n Side:     ' + ('Black' if self.side else 'White')
         string += '\n Castling: ' + bin(self.castling)[2:]
         string += '\n Key:      ' + hex(self.__hash__())
-        string += '\n FEN:      ' + self.fen()
 
         return string + '\n'
 
@@ -367,6 +366,12 @@ def do_move(pos: Position, move: Move) -> Position:
     side = pos.side
     xside = not side
 
+    # Update previous
+    if piece & ~0x1 is PAWN or capture:
+        previous = set()
+    else:
+        previous = {pos.__hash__()}.union(pos.previous)
+
     # Remove captured piece
     if capture:
         # En passant capture
@@ -404,16 +409,16 @@ def do_move(pos: Position, move: Move) -> Position:
     if capture:
         # Update white accumulation
         acc = accumulator[WHITE]
-        vec0 = FW_VECTORS[WHITE][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        vec1 = FW_VECTORS[WHITE][dirty_pieces[1][0]][dirty_pieces[1][1]]
-        vec2 = FW_VECTORS[WHITE][dirty_pieces[2][0]][dirty_pieces[2][1]]
+        vec0 = FW_VECTORS[WHITE][dirty_pieces[0]]
+        vec1 = FW_VECTORS[WHITE][dirty_pieces[1]]
+        vec2 = FW_VECTORS[WHITE][dirty_pieces[2]]
         accumulator[WHITE] = [a + v0 - v1 - v2 for a, v0, v1, v2
                               in zip(acc, vec0, vec1, vec2)]
         # Update black accumulation
         acc = accumulator[BLACK]
-        vec0 = FW_VECTORS[BLACK][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        vec1 = FW_VECTORS[BLACK][dirty_pieces[1][0]][dirty_pieces[1][1]]
-        vec2 = FW_VECTORS[BLACK][dirty_pieces[2][0]][dirty_pieces[2][1]]
+        vec0 = FW_VECTORS[BLACK][dirty_pieces[0]]
+        vec1 = FW_VECTORS[BLACK][dirty_pieces[1]]
+        vec2 = FW_VECTORS[BLACK][dirty_pieces[2]]
         accumulator[BLACK] = [a + v0 - v1 - v2 for a, v0, v1, v2
                               in zip(acc, vec0, vec1, vec2)]
 
@@ -421,14 +426,14 @@ def do_move(pos: Position, move: Move) -> Position:
     else:
         # Update white accumulation
         acc = accumulator[WHITE]
-        vec0 = FW_VECTORS[WHITE][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        vec1 = FW_VECTORS[WHITE][dirty_pieces[1][0]][dirty_pieces[1][1]]
+        vec0 = FW_VECTORS[WHITE][dirty_pieces[0]]
+        vec1 = FW_VECTORS[WHITE][dirty_pieces[1]]
         accumulator[WHITE] = [a + v0 - v1 for a, v0, v1
                               in zip(acc, vec0, vec1)]
         # Update black accumulation
         acc = accumulator[BLACK]
-        vec0 = FW_VECTORS[BLACK][dirty_pieces[0][0]][dirty_pieces[0][1]]
-        vec1 = FW_VECTORS[BLACK][dirty_pieces[1][0]][dirty_pieces[1][1]]
+        vec0 = FW_VECTORS[BLACK][dirty_pieces[0]]
+        vec1 = FW_VECTORS[BLACK][dirty_pieces[1]]
         accumulator[BLACK] = [a + v0 - v1 for a, v0, v1
                               in zip(acc, vec0, vec1)]
 
@@ -474,25 +479,19 @@ def do_move(pos: Position, move: Move) -> Position:
 
         # Update white accumulation
         acc = accumulator[WHITE]
-        vec0 = FW_VECTORS[WHITE][rook][rook_end]
-        vec1 = FW_VECTORS[WHITE][rook][rook_start]
+        vec0 = FW_VECTORS[WHITE][(rook, rook_end)]
+        vec1 = FW_VECTORS[WHITE][(rook, rook_start)]
         accumulator[WHITE] = [a + v0 - v1 for a, v0, v1
                               in zip(acc, vec0, vec1)]
         # Update black accumulation
         acc = accumulator[BLACK]
-        vec0 = FW_VECTORS[BLACK][rook][rook_end]
-        vec1 = FW_VECTORS[BLACK][rook][rook_start]
+        vec0 = FW_VECTORS[BLACK][(rook, rook_end)]
+        vec1 = FW_VECTORS[BLACK][(rook, rook_start)]
         accumulator[BLACK] = [a + v0 - v1 for a, v0, v1
                               in zip(acc, vec0, vec1)]
         
     # Update castling rights
     castling &= UPDATE_CASTLING_KEYS[start] & UPDATE_CASTLING_KEYS[end]
-
-    # Update previous
-    if piece & ~0x1 is PAWN or capture:
-        previous = set()
-    else:
-        previous = {pos.__hash__()}.union(pos.previous)
             
     return Position(board, bitboards, xside,
                     castling, ep_square, material_key, previous, accumulator)

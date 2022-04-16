@@ -57,8 +57,7 @@ class MovePicker:
         bad_tacticals = []
         
         # Loop through all tacticals
-        for scored_tactical in self.scored_tacticals:
-            move = scored_tactical[0]
+        for move, _ in self.scored_tacticals:
             # Calculate static exchange evaluation
             see_value = see(pos, move)
             # Add bad tactical to bad_tacticals
@@ -100,8 +99,7 @@ class MovePicker:
 
         if not quiescence or in_check:
             # Loop through scored quiets
-            for scored_quiet in self.scored_quiets:
-                move = scored_quiet[0]
+            for move, _ in self.scored_quiets:
                 # Play quiet if it is not a killer/counter/tt_move
                 if (in_check
                     or move not in (self.k1, self.k2, self.counter, tt_move)):
@@ -111,10 +109,9 @@ class MovePicker:
         self.phase = PLAY_BAD_TACTICALS
         
         # Loop through bad tacticals
-        for scored_tactical in sort_scored(bad_tacticals):
-            move = scored_tactical[0]
+        for move, _ in sort_scored(bad_tacticals):
             if in_check or move is not tt_move:
-                yield scored_tactical[0]
+                yield move
         
     @property
     def scored_quiets(self) -> list:

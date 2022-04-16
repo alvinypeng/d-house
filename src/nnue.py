@@ -16,8 +16,8 @@ THEIR_HIDDEN_WEIGHTS = HIDDEN_WEIGHTS[N_HIDDEN:]
 QUANTIZATION_PRECISION_IN = 32
 QUANTIZATION_PRECISION_OUT = 512
 
-# Feature weight vectors indexed by [color][piece][square]
-FW_VECTORS = zeros(2, 14, 64)
+# Feature weight vectors indexed by [color][(piece, square)]
+FW_VECTORS = dict(), dict()
 
 # Initialize FW_VECTORS
 for color in (WHITE, BLACK):
@@ -25,7 +25,7 @@ for color in (WHITE, BLACK):
         for square in range(64):
             i = (64 * ((piece // 2 - 1) + 6 * (piece & 0x1 != color))
                  + square ^ (56 if color is WHITE else 0)) * N_HIDDEN
-            FW_VECTORS[color][piece][square] = FEATURE_WEIGHTS[i:i+N_HIDDEN]
+            FW_VECTORS[color][(piece, square)] = FEATURE_WEIGHTS[i:i+N_HIDDEN]
 
 def make_accumulator(board: list[Piece]) -> list[list[int]]:
 
@@ -38,7 +38,7 @@ def make_accumulator(board: list[Piece]) -> list[list[int]]:
 
         for color in (WHITE, BLACK):
             acc = accumulator[color]
-            vec = FW_VECTORS[color][piece][square]
+            vec = FW_VECTORS[color][(piece, square)]
             accumulator[color] = [a + v for a, v in zip(acc, vec)]
 
     return accumulator

@@ -44,8 +44,6 @@ def spin(thread_no: int, shared: SharedMemory) -> None:
         if search_flag.value == True:
             
             try:
-                data.nodes = 0
-                data.stack = Stack()
                 search(shared, data)
                 
             except SearchStopped:
@@ -67,6 +65,9 @@ def search(shared: SharedMemory, data: SearchData) -> None:
     depth_limit, movetime, time, inc, movestogo = shared.limits
     timeman = TimeManager(search_flag, movetime, time, inc, movestogo)
 
+    data.nodes = 0
+    data.stack = Stack()
+
     pos = shared.pos
     alpha = -CHECKMATE
     beta = CHECKMATE
@@ -78,7 +79,7 @@ def search(shared: SharedMemory, data: SearchData) -> None:
     find_mate = 1 in map(bits, pos.bitboards[:2])
 
     # Iterative deepening
-    for depth in range(1, depth_limit + 1):
+    for depth in range(1, (MAX_DEPTH, depth_limit)[MAIN_THREAD] + 1):
         if search_flag.value == False:
             break
 
@@ -144,17 +145,14 @@ def search(shared: SharedMemory, data: SearchData) -> None:
             sys.stdout.flush()
 
             timeman.update(values, best_moves)
-            
-def quiescence(pos: Position, alpha: Value, beta: Value,
-               data: SearchData, pv: list[Move]) -> Value:
-    '''
-    Quiescence search. Search until the position is quiet so when we
-    finally evaluate the position, our evaluation is more reliable.
-    '''
+                
+def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
+            cut_node: bool, data: SearchData, pv: list[Move]) -> Value:
+    '''Searches a particular node of the game tree.'''
 
-    stack = data.stack
-    
-    child_pv = []
+    # Drop into quiescence search
+    if depth <= 0:
+        return quiescence(pos, alpha, beta, data, pv)
 
     data.nodes += 1
 
@@ -162,94 +160,6 @@ def quiescence(pos: Position, alpha: Value, beta: Value,
     if (search_flag.value == False or
         (MAIN_THREAD and data.nodes % 63 == 0 and timeman.out_of_time())):
         raise SearchStopped
-
-    # Draw
-    if pos.is_material_draw or pos.is_repeated or pos.rule_50 > 99:
-        return 0
-
-    # Prevent overflow
-    if stack.ply >= MAX_PLY:
-        return evaluate(pos)
-
-    # Check transposition table
-    tte = tt_get(tt, pos)
-    if tte:
-        tt_value = tte.value
-
-    # Transposition table is accurate
-    if tte and tte.value != UNKNOWN:
-        if (tte.bound is EXACT_BOUND
-            or (tte.bound is LOWER_BOUND and tt_value >= beta)
-            or (tte.bound is UPPER_BOUND and tt_value <= alpha)):
-            return tt_value
-
-    best_move = NULL_MOVE
-    old_alpha = alpha
-    best_value = -CHECKMATE + stack.ply
-
-    # Evaluate position
-    in_check = pos.in_check
-    evaluation = UNKNOWN if in_check else evaluate(pos)
-    stack[0].evaluation = evaluation
-
-    # Can we use the transposition table value as a more accurate
-    # evaluation of the position?
-    if tte and tt_value != UNKNOWN:
-        if tte.bound is (UPPER_BOUND, LOWER_BOUND)[tt_value > evaluation]:
-            evaluation = tt_value
-
-    # Standing pat
-    if not in_check:
-        if evaluation >= beta:
-            return evaluation
-        if evaluation > alpha:
-            alpha = evaluation
-        best_value = evaluation
-
-    # Initialize move picker and SEE cutoff
-    mp = MovePicker(pos, data)
-    see_cutoff = max(0, alpha - evaluation - DELTA_CUTOFF)
-    
-    # Loop through only good tacticals
-    for move in mp(quiescence=True, cutoff=see_cutoff):
-        if not in_check and mp.phase > PLAY_GOOD_TACTICALS:
-            break
-
-        # Do the move
-        stack[0].move = move
-        stack.ply += 1
-        value = -quiescence(do_move(pos, move), -beta, -alpha, data, child_pv)
-        stack.ply -= 1
-
-        # Regular quiescence search stuff
-        if value > best_value:
-            best_value = value
-            best_move = move
-            # Node is either pv or fail-high node
-            if value > alpha:
-                alpha = value
-                # Update pv
-                pv.clear()
-                pv.append(move)
-                pv += child_pv
-            # Fail high
-            if alpha >= beta:
-                break
-
-    # Store value in transposition table
-    if best_value >= beta:
-        bound = LOWER_BOUND
-    elif best_value <= old_alpha:
-        bound = UPPER_BOUND
-    else:
-        bound = EXACT_BOUND
-    tt_put(tt, pos, best_value, 0, bound, best_move)
-
-    return best_value
-                
-def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
-            cut_node: bool, data: SearchData, pv: list[Move]) -> Value:
-    '''Searches a particular node of the game tree.'''
 
     stack = data.stack
     
@@ -266,17 +176,6 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
     tt_move = NULL_MOVE
     best_move = NULL_MOVE
     excluded = stack[0].excluded
-
-    # Drop into quiescence search
-    if depth <= 0:
-        return quiescence(pos, alpha, beta, data, pv)
-
-    data.nodes += 1
-
-    # Check time
-    if (search_flag.value == False or
-        (MAIN_THREAD and data.nodes % 63 == 0 and timeman.out_of_time())):
-        raise SearchStopped
 
     if not is_root:
         # Draw
@@ -586,3 +485,105 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             tt_put(tt, pos, best_value, depth, bound, best_move)            
 
     return best_value 
+
+def quiescence(pos: Position, alpha: Value, beta: Value,
+               data: SearchData, pv: list[Move]) -> Value:
+    '''
+    Quiescence search. Search until the position is quiet so when we
+    finally evaluate the position, our evaluation is more reliable.
+    '''
+
+    data.nodes += 1
+
+    # Check time
+    if (search_flag.value == False or
+        (MAIN_THREAD and data.nodes % 63 == 0 and timeman.out_of_time())):
+        raise SearchStopped
+
+    stack = data.stack
+    
+    child_pv = []
+
+    # Draw
+    if pos.is_material_draw or pos.is_repeated or pos.rule_50 > 99:
+        return 0
+
+    # Prevent overflow
+    if stack.ply >= MAX_PLY:
+        return evaluate(pos)
+
+    # Check transposition table
+    tte = tt_get(tt, pos)
+    if tte:
+        tt_value = tte.value
+
+    # Transposition table is accurate
+    if tte and tte.value != UNKNOWN:
+        if (tte.bound is EXACT_BOUND
+            or (tte.bound is LOWER_BOUND and tt_value >= beta)
+            or (tte.bound is UPPER_BOUND and tt_value <= alpha)):
+            return tt_value
+
+    best_move = NULL_MOVE
+    old_alpha = alpha
+    best_value = -CHECKMATE + stack.ply
+
+    # Evaluate position
+    in_check = pos.in_check
+    evaluation = UNKNOWN if in_check else evaluate(pos)
+    stack[0].evaluation = evaluation
+
+    # Can we use the transposition table value as a more accurate
+    # evaluation of the position?
+    if tte and tt_value != UNKNOWN:
+        if tte.bound is (UPPER_BOUND, LOWER_BOUND)[tt_value > evaluation]:
+            evaluation = tt_value
+
+    # Standing pat
+    if not in_check:
+        if evaluation >= beta:
+            return evaluation
+        if evaluation > alpha:
+            alpha = evaluation
+        best_value = evaluation
+
+    # Initialize move picker and SEE cutoff
+    mp = MovePicker(pos, data)
+    see_cutoff = max(0, alpha - evaluation - DELTA_CUTOFF)
+    
+    # Loop through only good tacticals
+    for move in mp(quiescence=True, cutoff=see_cutoff):
+        if not in_check and mp.phase > PLAY_GOOD_TACTICALS:
+            break
+
+        # Do the move
+        stack[0].move = move
+        stack.ply += 1
+        value = -quiescence(do_move(pos, move), -beta, -alpha, data, child_pv)
+        stack.ply -= 1
+
+        # Regular quiescence search stuff
+        if value > best_value:
+            best_value = value
+            best_move = move
+            # Node is either pv or fail-high node
+            if value > alpha:
+                alpha = value
+                # Update pv
+                pv.clear()
+                pv.append(move)
+                pv += child_pv
+            # Fail high
+            if alpha >= beta:
+                break
+
+    # Store value in transposition table
+    if best_value >= beta:
+        bound = LOWER_BOUND
+    elif best_value <= old_alpha:
+        bound = UPPER_BOUND
+    else:
+        bound = EXACT_BOUND
+    tt_put(tt, pos, best_value, 0, bound, best_move)
+
+    return best_value

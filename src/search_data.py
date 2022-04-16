@@ -17,7 +17,7 @@ class Stack:
     def __init__(self):
         
         self.ply = 0  # Search ply 
-        self.entries = [StackEntry() for _ in range(MAX_PLY + 2 * STACK_OFFSET)]
+        self.entries = [StackEntry() for _ in range(MAX_PLY + 2 + 1)]
 
     def __getitem__(self, delta: int) -> StackEntry:
         return self.entries[self.ply + delta + STACK_OFFSET]

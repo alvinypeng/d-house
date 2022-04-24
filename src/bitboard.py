@@ -1,4 +1,5 @@
-from itertools import combinations
+import itertools
+import sys
 
 from defs import *
 
@@ -47,14 +48,12 @@ FILE_MASKS = A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE
 
 RANK_MASKS = RANK_8, RANK_7, RANK_6, RANK_5, RANK_4, RANK_3, RANK_2, RANK_1
 
-popcount_16 = [bin(x).count('1') for x in range(1 << 16)]
-
-def bits(bb: Bitboard) -> int:
-    return (+ popcount_16[(bb & 0x000000000000FFFF)]
-            + popcount_16[(bb & 0x00000000FFFF0000) >> 16]
-            + popcount_16[(bb & 0x0000FFFF00000000) >> 32]
-            + popcount_16[(bb & 0xFFFF000000000000) >> 48])
-
+# Popcount function
+if sys.version_info < (3, 10):
+    bits = lambda bb: bin(bb).count('1')
+else:
+    bits = int.bit_count
+    
 def msb(bb: Bitboard) -> int:
     return bb.bit_length() - 1
 
@@ -160,7 +159,7 @@ def occupied_combinations(bitboard: Bitboard) -> iter:
         bitboard ^= 1 << square
 
     for count in range(len(bit_indices) + 1):
-        for occupied_squares in combinations(bit_indices, count):
+        for occupied_squares in itertools.combinations(bit_indices, count):
             occupied_mask = 0
             for square in occupied_squares:
                 occupied_mask |= 1 << square

@@ -76,8 +76,6 @@ def search(shared: SharedMemory, data: SearchData) -> None:
     values = []
     best_moves = []
 
-    find_mate = 1 in map(bits, pos.bitboards[:2])
-
     # Iterative deepening
     for depth in range(1, (MAX_DEPTH, depth_limit)[MAIN_THREAD] + 1):
         if search_flag.value == False:
@@ -86,7 +84,7 @@ def search(shared: SharedMemory, data: SearchData) -> None:
         pv = []
         search_depth = depth
 
-        if depth > 4 and abs(value) <= 1000 and not find_mate:
+        if depth > 4 and abs(value) <= 1000:
             alpha = max(value - WINDOW, -CHECKMATE)
             beta = min(value + WINDOW, CHECKMATE)
             delta = WINDOW
@@ -98,21 +96,33 @@ def search(shared: SharedMemory, data: SearchData) -> None:
         # Aspiration window
         while True:
             value = negamax(pos, alpha, beta, search_depth, False, data, pv)
+            
             # Update node count
             with shared.nodes.get_lock():
                 shared.nodes.value += data.nodes
             data.nodes = 0
+            
             # Failed low so reduce lower bound and search again
             if value <= alpha:
                 alpha = max(alpha - delta, -CHECKMATE)
-                beta = (alpha + beta) // 2 
+                beta = (alpha + beta) // 2
+                search_depth = depth
+                
+                if MAIN_THREAD:
+                    timeman.keep_searching()
+                    
             # Failed high so increase upper bound and search again
             elif value >= beta:
                 beta = min(beta + delta, CHECKMATE)
                 search_depth -= abs(value) < TB_WIN
+                
+                if MAIN_THREAD:
+                    timeman.keep_searching()
+                    
             # Finish searching this depth because the value is ok
             else:
                 break
+            
             # Increase window size because the search failed
             delta += delta // 2
 
@@ -144,7 +154,8 @@ def search(shared: SharedMemory, data: SearchData) -> None:
                   f'pv {pv_str} ')
             sys.stdout.flush()
 
-            timeman.update(values, best_moves)
+            if depth > 4:
+                timeman.update(values, best_moves)
                 
 def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
             cut_node: bool, data: SearchData, pv: list[Move]) -> Value:
@@ -247,7 +258,7 @@ def negamax(pos: Position, alpha: Value, beta: Value, depth: int,
         # Null move pruning condition
         if (depth > 2 
             and not excluded
-            and pos.has_non_pawn
+            and has_non_pawn(pos, pos.side)
             and stack[-1].move is not NULL_MOVE
             and evaluation - 10 * improving >= beta):
             

@@ -1,4 +1,3 @@
-from __future__ import annotations  # for tt
 from defs import *
 
 STACK_OFFSET = 2
@@ -22,7 +21,6 @@ class Stack:
     def __getitem__(self, delta: int) -> StackEntry:
         return self.entries[self.ply + delta + STACK_OFFSET]
     
-# Other engines typically call this class/struct "Thread"
 class SearchData:
 
     def __init__(self):

@@ -41,7 +41,7 @@ def probe_root(pos: Position) -> int:
                   f'score {score} '
                   f'nodes 0 '
                   f'nps 0 '
-                  f'time 100 '
+                  f'time 0 '
                   f'pv {bestmove}')            
             print('bestmove ' + bestmove)
             return True

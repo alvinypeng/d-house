@@ -78,12 +78,6 @@ class Position:
     @property
     def is_material_draw(self) -> bool:
         return self.material_key in INSUFFICIENT_MATERIAL
-
-    @property
-    def has_non_pawn(self) -> bool:
-        return (self.bitboards[self.side]
-                ^ self.bitboards[self.side + KING]
-                ^ self.bitboards[self.side + PAWN])
     
     @property
     def in_check(self) -> bool:
@@ -336,8 +330,16 @@ def parse_fen(fen: str=STARTING_FEN) -> Position:
     return Position(board, bitboards, side,
                     castling, ep_square, material_key, previous, accumulator)
 
+def has_non_pawn(pos: Position, side: Color) -> bool:
+    '''Used for null-move pruning.'''
+    
+    return (pos.bitboards[side]
+            ^ pos.bitboards[side + KING]
+            ^ pos.bitboards[side + PAWN])
+
 def do_null_move(pos: Position) -> Position:
     '''Does a null move on the position using copy/make.'''
+    
     return Position([*pos.board], [*pos.bitboards], not pos.side, pos.castling,
                     0, pos.material_key, set(), deepcopy(pos.accumulator))
     

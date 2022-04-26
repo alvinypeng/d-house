@@ -1,5 +1,6 @@
 from defs import *
 from nnue import *
+from endgame import *
 from position import *
 
 def evaluate(pos: Position) -> Value:
@@ -7,6 +8,11 @@ def evaluate(pos: Position) -> Value:
 
     if pos.is_material_draw:
         return 0
+
+    try:
+        return mop_up_evaluation(pos)
+    except NoMopUpEvaluation:
+        pass
     
     us = pos.side
     ours = pos.accumulator[us]        # Our accumulation

@@ -11,7 +11,7 @@ SLIDERS = (
 SLIDER_ATTACKS = bishop_attacks, rook_attacks, queen_attacks
 
 def gen_tacticals(pos: Position) -> iter:
-    '''Generates tactical moves. These are promotions and captures.'''
+    '''Generates tactical moves (promotions & captures).'''
 
     board = pos.board
     bitboards = pos.bitboards
